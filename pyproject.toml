@@ -1,0 +1,27 @@
+[project]
+name = "project"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "veronika_levasheva",email = "v.levasheva@innopolis.university"}
+]
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit (>=1.55.0,<2.0.0)",
+    "sqlalchemy (>=2.0.48,<3.0.0)",
+    "fastapi (>=0.135.2,<0.136.0)",
+    "radon (>=6.0.1,<7.0.0)",
+    "flake8 (>=7.3.0,<8.0.0)",
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "bandit (>=1.9.4,<2.0.0)",
+    "locust (>=2.43.3,<3.0.0)",
+    "setuptools (>=82.0.1,<83.0.0)",
+    "requests (>=2.33.0,<3.0.0)",
+    "hypothesis (>=6.151.9,<7.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

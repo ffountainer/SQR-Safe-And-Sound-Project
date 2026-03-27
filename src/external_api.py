@@ -1,0 +1,1 @@
+# external api that will retrieve yandex maps widget for the frontend
