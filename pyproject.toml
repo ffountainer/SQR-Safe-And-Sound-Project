@@ -18,7 +18,8 @@ dependencies = [
     "locust (>=2.43.3,<3.0.0)",
     "setuptools (>=82.0.1,<83.0.0)",
     "requests (>=2.33.0,<3.0.0)",
-    "hypothesis (>=6.151.9,<7.0.0)"
+    "hypothesis (>=6.151.9,<7.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)"
 ]
 
 
