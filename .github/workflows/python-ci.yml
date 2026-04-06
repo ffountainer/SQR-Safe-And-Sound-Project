@@ -5,26 +5,26 @@ on:
   pull_request:
 
 jobs:
-  test:
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v2
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.11'
-    
-    - name: Install Poetry
-      run: pip install poetry
-    
-    - name: Install dependencies 
-      run: poetry install --not-root
-    
-    - name: Dependency Validation 
-      run: poetry check
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+      
+      - name: Install Poetry
+        run: pip install poetry
+      
+      - name: Install dependencies 
+        run: poetry install --not-root
+      
+      - name: Dependency Validation 
+        run: poetry check
 
-  test:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
