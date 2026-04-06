@@ -32,6 +32,8 @@ class MachineOut(BaseModel):
     id: int
     name: str
     type: str
+    floor: int | None = None
+    building: str | None = None
     inferred_status: InferredStatus
 
 

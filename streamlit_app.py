@@ -6,11 +6,16 @@ import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
+try:
+    from src.external_api import map_widget_iframe_html
+except ImportError:
+    map_widget_iframe_html = None  # type: ignore
+
 
 DEFAULT_API_BASE_URL = "http://localhost:8000"
 DEFAULT_MAP_CENTER = (55.751244, 37.618423)
 DEFAULT_MAP_ZOOM = 10
-DEFAULT_STATUS_ORDER = ["free", "in_process", "broken", "unknown"]
+DEFAULT_STATUS_ORDER = ["free", "busy", "probably_free", "unavailable", "unknown"]
 
 
 def request_json(method: str, url: str, **kwargs) -> Optional[Any]:
@@ -25,20 +30,20 @@ def request_json(method: str, url: str, **kwargs) -> Optional[Any]:
         return None
 
 
-def fetch_machines(api_base_url: str) -> List[Dict[str, Any]]:
+def fetch_machines(DEFAULT_API_BASE_URL: str) -> List[Dict[str, Any]]:
     data = request_json(
         "GET",
-        f"{api_base_url.rstrip('/')}/machines"
+        f"{DEFAULT_API_BASE_URL.rstrip('/')}/machines"
     )
     if isinstance(data, list):
         return data
     return []
 
 
-def submit_report(api_base_url: str, report_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def submit_report(DEFAULT_API_BASE_URL: str, report_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return request_json(
         "POST",
-        f"{api_base_url.rstrip('/')}/report",
+        f"{DEFAULT_API_BASE_URL.rstrip('/')}/report",
         headers={"Content-Type": "application/json"},
         data=json.dumps(report_data),
     )
@@ -50,10 +55,12 @@ def normalize_status(status_value: Any) -> str:
     text = str(status_value).lower()
     if any(keyword in text for keyword in ["free", "available", "свободна", "idle"]):
         return "free"
-    if any(keyword in text for keyword in ["process", "busy", "running", "занят", "в процессе"]):
-        return "in_process"
-    if any(keyword in text for keyword in ["broken", "error", "fault", "сломана", "неисправ"]):
-        return "broken"
+    if any(keyword in text for keyword in ["busy", "process", "running", "занят", "в процессе"]):
+        return "busy"
+    if any(keyword in text for keyword in ["probably_free", "скорее свободна"]):
+        return "probably_free"
+    if any(keyword in text for keyword in ["unavailable", "broken", "error", "fault", "сломана", "неисправ"]):
+        return "unavailable"
     return "unknown"
 
 
@@ -61,15 +68,19 @@ def status_to_label(status_value: Any) -> str:
     normalized = normalize_status(status_value)
     if normalized == "free":
         return "Свободна"
-    if normalized == "in_process":
+    if normalized == "busy":
         return "В процессе"
-    if normalized == "broken":
+    if normalized == "probably_free":
+        return "Скорее свободна"
+    if normalized == "unavailable":
         return "Сломана"
     return str(status_value or "Неизвестно")
 
 
 def status_sort_key(machine: Dict[str, Any]) -> int:
-    status = normalize_status(machine.get("status") or machine.get("state") or machine.get("condition"))
+    status = normalize_status(
+        machine.get("inferred_status") or machine.get("status") or machine.get("state") or machine.get("condition")
+    )
     try:
         return DEFAULT_STATUS_ORDER.index(status)
     except ValueError:
@@ -125,29 +136,45 @@ def filter_and_sort_machines(
     return sorted(filtered, key=lambda machine: (status_sort_key(machine), extract_floor(machine) or 0, format_machine_name(machine)))
 
 
-def render_report_panel(api_base_url: str, selected_machine_id: Optional[str]) -> None:
+def render_report_panel(DEFAULT_API_BASE_URL: str, selected_machine_id: Optional[str]) -> None:
     st.subheader("Создать репорт")
-    machine_id = selected_machine_id or st.text_input("ID машины для отчета", value="")
-    report_text = st.text_area("Текст отчета", height=140, placeholder="Опишите проблему или состояние машины")
-    report_type = st.selectbox("Тип отчета", ["maintenance", "incident", "status"], index=0)
+    if selected_machine_id:
+        st.markdown(f"**Машина #{selected_machine_id}**")
+
+    machine_id = selected_machine_id or str(int(st.number_input("ID машины для отчета", min_value=1, value=1)))
+    status = st.selectbox(
+        "Статус машины",
+        ["busy", "free", "unavailable"],
+        format_func=lambda value: {
+            "busy": "В процессе",
+            "free": "Свободна",
+            "unavailable": "Сломана",
+        }[value],
+    )
+
+    time_remaining = None
+    if status == "busy":
+        time_remaining = st.number_input("Время до конца (мин)", min_value=0, value=10)
+    else:
+        st.info("Время до конца используется только для статуса 'В процессе'.")
 
     if st.button("Отправить отчет"):
-        if not machine_id.strip() or not report_text.strip():
-            st.warning("Укажите ID машины и текст отчета.")
+        if not machine_id.strip():
+            st.warning("Укажите ID машины для отчета.")
         else:
             payload = {
-                "machine_id": machine_id.strip(),
-                "type": report_type,
-                "message": report_text.strip(),
+                "machine_id": int(machine_id),
+                "status": status,
+                "time_remaining": time_remaining if status == "busy" else None,
             }
-            result = submit_report(api_base_url, payload)
+            result = submit_report(DEFAULT_API_BASE_URL, payload)
             if result is not None:
                 st.success("Отчет отправлен успешно")
                 st.json(result)
 
 
-def render_machine_list(api_base_url: str, building: Optional[str], floor: int) -> Optional[str]:
-    machines = fetch_machines(api_base_url)
+def render_machine_list(DEFAULT_API_BASE_URL: str, building: Optional[str], floor: int) -> Optional[str]:
+    machines = fetch_machines(DEFAULT_API_BASE_URL)
     if not machines:
         st.info("Нет данных о машинах. Проверьте URL бэкенда и доступность сервиса.")
         return None
@@ -164,12 +191,15 @@ def render_machine_list(api_base_url: str, building: Optional[str], floor: int) 
     for machine in filtered_machines:
         machine_id = format_machine_name(machine)
         machine_floor = extract_floor(machine)
-        status_label = status_to_label(machine.get("status") or machine.get("state") or machine.get("condition"))
+        machine_building = extract_building(machine)
+        status_label = status_to_label(machine.get("inferred_status") or machine.get("status") or machine.get("state") or machine.get("condition"))
         time_remaining = extract_time_remaining(machine)
 
         row = st.container()
         cols = row.columns([2, 1, 1, 1, 1])
-        cols[0].markdown(f"**#{machine_id}**")
+        cols[0].markdown(
+            f"**#{machine_id}**\nТип: {machine.get('type', '—')}\nКорпус: {machine_building or '—'}"
+        )
         cols[1].markdown(f"Этаж\n**{machine_floor if machine_floor is not None else '—'}**")
         cols[2].markdown(f"Статус\n**{status_label}**")
         cols[3].markdown(f"Осталось\n**{time_remaining or '—'}**")
@@ -183,30 +213,23 @@ def render_machine_list(api_base_url: str, building: Optional[str], floor: int) 
     if st.session_state.selected_report_machine:
         st.markdown("---")
         st.info(f"Создать репорт для машины: {st.session_state.selected_report_machine}")
-        render_report_panel(api_base_url, st.session_state.selected_report_machine)
+        render_report_panel(DEFAULT_API_BASE_URL, st.session_state.selected_report_machine)
 
     return st.session_state.selected_report_machine
 
 
-def render_yandex_map(api_key: str, center: tuple[float, float], zoom: int) -> None:
-    map_html = f"""
-    <div id="map" style="width: 100%; height: 520px"></div>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey={api_key}"></script>
-    <script>
-        ymaps.ready(function () {{
-            const map = new ymaps.Map('map', {{
-                center: [{center[0]}, {center[1]}],
-                zoom: {zoom},
-                controls: ['zoomControl', 'fullscreenControl']
-            }});
-            map.geoObjects.add(new ymaps.Placemark([{center[0]}, {center[1]}], {{
-                hintContent: 'Центр карты',
-                balloonContent: 'Яндекс.Карта через внешнее API'
-            }}));
-        }});
-    </script>
-    """
-    components.html(map_html, height=560, scrolling=False)
+def render_yandex_map(address: str, width: int, height: int, zoom: int) -> None:
+    if map_widget_iframe_html is None:
+        st.error(
+            "Не удалось загрузить карту из external_api.py. Убедитесь, что модуль `src.external_api` и его зависимости доступны."
+        )
+        return
+
+    try:
+        map_html = map_widget_iframe_html(address, width=width, height=height, zoom=zoom)
+        components.html(map_html, height=height + 20, scrolling=False)
+    except Exception as error:
+        st.error(f"Ошибка создания карты: {error}")
 
 
 def main() -> None:
@@ -221,31 +244,23 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Настройки")
-        api_base_url = st.text_input("Backend API URL", DEFAULT_API_BASE_URL)
         building_number = st.text_input("Номер корпуса (K)", value="1")
         floor_number = st.number_input("Этаж (N)", min_value=1, max_value=100, value=1)
-        yandex_api_key = st.text_input("Yandex Maps API ключ", type="password")
-        center_text = st.text_input("Центр карты (lat,lon)", f"{DEFAULT_MAP_CENTER[0]},{DEFAULT_MAP_CENTER[1]}")
+        map_address = st.text_input("Адрес для карты", value="Москва, Россия")
         zoom = st.slider("Уровень масштабирования карты", 1, 18, DEFAULT_MAP_ZOOM)
-
-    try:
-        lat, lon = [float(item.strip()) for item in center_text.split(",", 1)]
-    except ValueError:
-        lat, lon = DEFAULT_MAP_CENTER
-        st.sidebar.error("Неверный формат центра карты. Используйте lat,lon.")
 
     cols = st.columns([2, 1])
     with cols[0]:
-        render_machine_list(api_base_url, building_number.strip(), floor_number)
+        render_machine_list(DEFAULT_API_BASE_URL, building_number.strip(), floor_number)
 
     with cols[1]:
-        st.subheader("Яндекс.Карты")
-        if yandex_api_key:
-            render_yandex_map(yandex_api_key, (lat, lon), zoom)
+        st.subheader("Яндекс.Карта")
+        if map_address.strip():
+            render_yandex_map(map_address.strip(), width=560, height=520, zoom=zoom)
         else:
-            st.warning("Укажите API ключ Яндекс.Карт в боковой панели для отображения виджета.")
+            st.warning("Укажите адрес для карты в боковой панели.")
             st.info(
-                "Для демонстрации можно использовать сервисный ключ Yandex Maps API или зарегистрировать свой на https://developer.tech.yandex.ru/"
+                "Адрес будет использован для геокодирования через Yandex Geocoder в external_api.py."
             )
 
 
