@@ -19,7 +19,7 @@ jobs:
         run: pip install poetry
       
       - name: Install dependencies 
-        run: poetry install --not-root
+        run: poetry install --no-root
       
       - name: Dependency Validation 
         run: poetry check
