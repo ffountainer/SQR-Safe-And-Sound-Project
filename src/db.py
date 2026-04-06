@@ -95,6 +95,8 @@ def get_status() -> list[dict[str, Any]]:
 				"id": machine["id"],
 				"name": machine["name"],
 				"type": machine["type"],
+				"floor": machine.get("floor"),
+				"building": machine.get("building"),
 				"inferred_status": inferred_status,
 				"reported_status": report_status,
 				"last_report_at": reported_at.isoformat() if reported_at else None,

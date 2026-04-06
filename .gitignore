@@ -2,3 +2,8 @@
 
 mdocs/
 .venv/
+
+*.lock
+*.pdf
+*.db
+*.pyc

@@ -12,6 +12,34 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///laundry.db")
 engine = create_engine(DATABASE_URL, future=True)
 
 
+def _ensure_machine_metadata_columns(connection) -> None:
+	existing_columns = [row[1] for row in connection.execute(text("PRAGMA table_info(machines)"))]
+	if "floor" not in existing_columns:
+		connection.execute(text("ALTER TABLE machines ADD COLUMN floor INTEGER"))
+	if "building" not in existing_columns:
+		connection.execute(text("ALTER TABLE machines ADD COLUMN building TEXT"))
+
+
+def _ensure_existing_machine_metadata(connection) -> None:
+	"""Populate metadata for already seeded machines when the schema was extended."""
+	rows = connection.execute(text("SELECT id, floor, building FROM machines")).mappings().all()
+	mapping = {
+		1: (1, "1"),
+		2: (2, "1"),
+		3: (1, "1"),
+		4: (2, "1"),
+	}
+	for row in rows:
+		if row["id"] in mapping and (row["floor"] is None or row["building"] is None):
+			floor, building = mapping[row["id"]]
+			connection.execute(
+				text(
+					"UPDATE machines SET floor = :floor, building = :building WHERE id = :id"
+				),
+				{"floor": floor, "building": building, "id": row["id"]},
+			)
+
+
 def init_db() -> None:
 	"""Create required tables if they do not exist."""
 	with engine.begin() as connection:
@@ -21,7 +49,9 @@ def init_db() -> None:
 				CREATE TABLE IF NOT EXISTS machines (
 					id INTEGER PRIMARY KEY,
 					name TEXT NOT NULL,
-					type TEXT NOT NULL CHECK (type IN ('wash', 'dry'))
+					type TEXT NOT NULL CHECK (type IN ('wash', 'dry')),
+					floor INTEGER,
+					building TEXT
 				)
 				"""
 			)
@@ -58,6 +88,9 @@ def init_db() -> None:
 			)
 		)
 
+		_ensure_machine_metadata_columns(connection)
+		_ensure_existing_machine_metadata(connection)
+
 
 def seed_machines_if_empty() -> None:
 	"""Populate the machine catalog when the table is empty."""
@@ -68,13 +101,15 @@ def seed_machines_if_empty() -> None:
 			return
 
 		seed_data = [
-			{"id": 1, "name": "Washer 1", "type": "wash"},
-			{"id": 2, "name": "Washer 2", "type": "wash"},
-			{"id": 3, "name": "Dryer 1", "type": "dry"},
-			{"id": 4, "name": "Dryer 2", "type": "dry"},
+			{"id": 1, "name": "Washer 1", "type": "wash", "floor": 1, "building": "1"},
+			{"id": 2, "name": "Washer 2", "type": "wash", "floor": 2, "building": "1"},
+			{"id": 3, "name": "Dryer 1", "type": "dry", "floor": 1, "building": "1"},
+			{"id": 4, "name": "Dryer 2", "type": "dry", "floor": 2, "building": "1"},
 		]
 		connection.execute(
-			text("INSERT INTO machines (id, name, type) VALUES (:id, :name, :type)"),
+			text(
+				"INSERT INTO machines (id, name, type, floor, building) VALUES (:id, :name, :type, :floor, :building)"
+			),
 			seed_data,
 		)
 
@@ -87,6 +122,8 @@ def fetch_machines() -> list[dict[str, Any]]:
 			m.id,
 			m.name,
 			m.type,
+			m.floor,
+			m.building,
 			r.id AS report_id,
 			r.timestamp AS report_timestamp,
 			r.status AS report_status,

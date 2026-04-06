@@ -19,7 +19,8 @@ dependencies = [
     "setuptools (>=82.0.1,<83.0.0)",
     "requests (>=2.33.0,<3.0.0)",
     "hypothesis (>=6.151.9,<7.0.0)",
-    "python-dotenv (>=1.2.2,<2.0.0)"
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "uvicorn (>=0.44.0,<0.45.0)"
 ]
 
 
