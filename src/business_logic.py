@@ -20,8 +20,8 @@ INFERRED_BUSY = "busy"
 INFERRED_PROBABLY_FREE = "probably_free"
 INFERRED_UNAVAILABLE = "unavailable"
 
-# when "busy" without deadline, use default
-DEFAULT_BUSY_ASSUMPTION = timedelta(hours=2)
+# when "busy" without deadline, use default (project requirement: 4 hours)
+DEFAULT_BUSY_ASSUMPTION = timedelta(hours=4)
 
 
 def _naive(dt: datetime) -> datetime:
