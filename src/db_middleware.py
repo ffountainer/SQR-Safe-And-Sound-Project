@@ -100,12 +100,33 @@ def seed_machines_if_empty() -> None:
 		if machines_count > 0:
 			return
 
-		seed_data = [
-			{"id": 1, "name": "Washer 1", "type": "wash", "floor": 1, "building": "1"},
-			{"id": 2, "name": "Washer 2", "type": "wash", "floor": 2, "building": "1"},
-			{"id": 3, "name": "Dryer 1", "type": "dry", "floor": 1, "building": "1"},
-			{"id": 4, "name": "Dryer 2", "type": "dry", "floor": 2, "building": "1"},
-		]
+		# 7 buildings total:
+		# - buildings 1-5 have 4 floors
+		# - buildings 6-7 have 13 floors
+		# on every floor there are 2 washers + 2 dryers (4 machines per floor)
+		seed_data: list[dict[str, Any]] = []
+		next_id = 1
+
+		for building in range(1, 8):
+			max_floor = 4 if building <= 5 else 13
+			for floor in range(1, max_floor + 1):
+				machines = [
+					("Washer 1", "wash"),
+					("Washer 2", "wash"),
+					("Dryer 1", "dry"),
+					("Dryer 2", "dry"),
+				]
+				for name, mtype in machines:
+					seed_data.append(
+						{
+							"id": next_id,
+							"name": f"B{building} F{floor} {name}",
+							"type": mtype,
+							"floor": floor,
+							"building": str(building),
+						}
+					)
+					next_id += 1
 		connection.execute(
 			text(
 				"INSERT INTO machines (id, name, type, floor, building) VALUES (:id, :name, :type, :floor, :building)"
