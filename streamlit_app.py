@@ -312,6 +312,74 @@ def render_report_panel(
             st.rerun()
 
 
+def process_column(col, machine, mid, machine_building,
+                   machine_floor, normalized_status,
+                   status_label, time_remaining):
+    with col:
+        with st.container(border=True):
+            st.markdown(
+                f"""
+                <div style="line-height:1.15">
+                    <div style="font-weight:700;margin:0 0 6px 0;">#{
+                        mid} • {machine.get('name', '—')}</div>
+                    <div style="margin:0 0 4px 0;">тип: <b>{
+                        machine.get('type', '—')}</b></div>
+                    <div style="margin:0 0 4px 0;">корпус: <b>{
+                        machine_building or '—'}</b> • этаж: <b>{
+                            machine_floor if machine_floor
+                            is not None else '—'}</b></div>
+                    <div style="margin:0 0 4px 0;">статус: {
+                        status_badge_html(normalized_status)}<b>{status_label}</b></div>
+                    <div style="margin:0;">осталось: <b>{
+                        time_remaining or '—'}</b></div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                "<div style='height:1px'></div>",
+                unsafe_allow_html=True
+            )
+
+            if normalized_status != "busy":
+                if st.button("Создать репорт", key=f"report_{mid}"):
+                    st.session_state.selected_report_machine = str(mid)
+            else:
+                st.caption("в процессе")
+
+            st.markdown(
+                "<div style='height:2px'></div>",
+                unsafe_allow_html=True
+            )
+
+            if st.button("История", key=f"history_{mid}",
+                         type="tertiary"):
+                st.session_state.history_machine_id = mid
+
+
+def display_machines(rows, cards_per_row):
+    for row_machines in rows:
+        cols = st.columns(cards_per_row)
+        for col, machine in zip(cols, row_machines):
+            mid = int(machine.get("id"))
+            machine_floor = extract_floor(machine)
+            machine_building = extract_building(machine)
+            normalized_status = get_display_status(machine)
+            status_label = status_to_label(normalized_status)
+            remaining_minutes = compute_remaining_minutes(machine)
+            time_remaining = (
+                str(remaining_minutes)
+                if normalized_status == "busy"
+                and remaining_minutes is not None
+                else None
+            )
+
+            process_column(col, machine, mid, machine_building,
+                           machine_floor, normalized_status,
+                           status_label, time_remaining)
+
+
 def render_machine_list(
     DEFAULT_API_BASE_URL: str,
     building: Optional[str],
@@ -341,63 +409,7 @@ def render_machine_list(
         for i in range(0, len(filtered_machines), cards_per_row)
     ]
 
-    for row_machines in rows:
-        cols = st.columns(cards_per_row)
-        for col, machine in zip(cols, row_machines):
-            mid = int(machine.get("id"))
-            machine_floor = extract_floor(machine)
-            machine_building = extract_building(machine)
-            normalized_status = get_display_status(machine)
-            status_label = status_to_label(normalized_status)
-            remaining_minutes = compute_remaining_minutes(machine)
-            time_remaining = (
-                str(remaining_minutes)
-                if normalized_status == "busy"
-                and remaining_minutes is not None
-                else None
-            )
-
-            with col:
-                with st.container(border=True):
-                    st.markdown(
-                        f"""
-                        <div style="line-height:1.15">
-                            <div style="font-weight:700;margin:0 0 6px 0;">#{
-                                mid} • {machine.get('name', '—')}</div>
-                            <div style="margin:0 0 4px 0;">тип: <b>{
-                                machine.get('type', '—')}</b></div>
-                            <div style="margin:0 0 4px 0;">корпус: <b>{
-                                machine_building or '—'}</b> • этаж: <b>{
-                                    machine_floor if machine_floor
-                                    is not None else '—'}</b></div>
-                            <div style="margin:0 0 4px 0;">статус: {
-                                status_badge_html(normalized_status)}<b>{status_label}</b></div>
-                            <div style="margin:0;">осталось: <b>{
-                                time_remaining or '—'}</b></div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-                    st.markdown(
-                        "<div style='height:1px'></div>",
-                        unsafe_allow_html=True
-                    )
-
-                    if normalized_status != "busy":
-                        if st.button("Создать репорт", key=f"report_{mid}"):
-                            st.session_state.selected_report_machine = str(mid)
-                    else:
-                        st.caption("в процессе")
-
-                    st.markdown(
-                        "<div style='height:2px'></div>",
-                        unsafe_allow_html=True
-                    )
-
-                    if st.button("История", key=f"history_{mid}",
-                                 type="tertiary"):
-                        st.session_state.history_machine_id = mid
+    display_machines(rows, cards_per_row)
 
     if "selected_report_machine" not in st.session_state:
         st.session_state.selected_report_machine = None
@@ -531,9 +543,9 @@ div[data-testid="stSidebar"] button.nav-active {
         )
 
         home_clicked = st.button("Главная",
-                                 type="secondary", use_container_width=True)
+                                 type="secondary", width='stretch')
         select_clicked = st.button(
-            "Выбрать машину", type="secondary", use_container_width=True
+            "Выбрать машину", type="secondary", width='stretch'
         )
 
         if home_clicked:
