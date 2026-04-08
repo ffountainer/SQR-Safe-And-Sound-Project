@@ -1,0 +1,4 @@
+# file: /Users/fountainer/uni/SQR/project/src/external_api.py
+# hypothesis_version: 6.151.9
+
+[10.0, 400, 560, '.env', 'GeoObject', 'GeoObjectCollection', 'Point', 'YANDEX_MAPS_API_KEY', 'apikey', 'featureMember', 'format', 'geocode', 'json', 'lang', 'll', 'pos', 'pt', 'response', 'results', 'ru_RU', 'z']

@@ -86,7 +86,8 @@ def test_extract_floor_and_building_support_alternative_keys():
 def test_compute_remaining_minutes_uses_estimated_free_at():
     now = datetime.now(timezone.utc)
     machine = {
-        "estimated_free_at": (now + timedelta(minutes=12, seconds=5)).isoformat(),
+        "estimated_free_at": (
+            now + timedelta(minutes=12, seconds=5)).isoformat(),
         "last_report_at": (now - timedelta(minutes=50)).isoformat(),
         "time_remaining": 999,
     }
@@ -101,7 +102,8 @@ def test_get_display_status_turns_free_into_busy_when_time_left():
     now = datetime.now(timezone.utc)
     machine = {
         "reported_status": "free",
-        "estimated_free_at": (now + timedelta(minutes=5, seconds=5)).isoformat(),
+        "estimated_free_at": (
+            now + timedelta(minutes=5, seconds=5)).isoformat(),
     }
 
     assert get_display_status(machine) == "busy"
@@ -168,4 +170,5 @@ def test_parse_first_point_extracts_coordinates():
         }
     }
 
-    assert _parse_first_point(data) == (49.1221, 55.7887)
+    assert _parse_first_point(
+        data) == (49.1221, 55.7887)
