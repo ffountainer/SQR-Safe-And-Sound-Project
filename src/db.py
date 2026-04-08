@@ -142,6 +142,36 @@ def get_machine_history(
     return history
 
 
+def isinstance_machine(machine_id):
+    if not isinstance(machine_id, int) or machine_id <= 0:
+        raise ValueError("machine_id must be a positive integer")
+
+
+def is_valid_status(incoming_status):
+    if incoming_status not in VALID_STATUSES:
+        raise ValueError("status must be one of: free, busy, unavailable")
+
+
+def does_time_remain(incoming_time_remaining):
+    if incoming_time_remaining is not None:
+        if not isinstance(
+                incoming_time_remaining, int) or incoming_time_remaining < 0:
+            raise ValueError(
+                "time_remaining must be a non-negative integer or null")
+
+
+def is_reporter_name_valid(incoming_reporter_name):
+    if incoming_reporter_name is not None and not isinstance(
+        incoming_reporter_name, str
+    ):
+        raise ValueError("reporter_name must be a string or null")
+
+
+def does_machine_exist(machine_id):
+    if not machine_exists(machine_id):
+        raise ValueError("machine_id does not exist")
+
+
 def save_report(
     report_or_machine_id: dict[str, Any] | int,
     status: str | None = None,
@@ -168,21 +198,11 @@ def save_report(
         incoming_time_remaining = time_remaining
         incoming_reporter_name = reporter_name
 
-    if not isinstance(machine_id, int) or machine_id <= 0:
-        raise ValueError("machine_id must be a positive integer")
-    if incoming_status not in VALID_STATUSES:
-        raise ValueError("status must be one of: free, busy, unavailable")
-    if incoming_time_remaining is not None:
-        if not isinstance(
-                incoming_time_remaining, int) or incoming_time_remaining < 0:
-            raise ValueError(
-                "time_remaining must be a non-negative integer or null")
-    if incoming_reporter_name is not None and not isinstance(
-        incoming_reporter_name, str
-    ):
-        raise ValueError("reporter_name must be a string or null")
-    if not machine_exists(machine_id):
-        raise ValueError("machine_id does not exist")
+    isinstance_machine(machine_id)
+    is_valid_status(incoming_status)
+    does_time_remain(incoming_time_remaining)
+    is_reporter_name_valid(incoming_reporter_name)
+    does_machine_exist(machine_id)
 
     inserted = insert_report(
         machine_id=machine_id,
