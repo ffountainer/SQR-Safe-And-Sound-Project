@@ -14,15 +14,15 @@ engine = create_engine(DATABASE_URL, future=True)
 
 def _ensure_machine_metadata_columns(connection) -> None:
     existing_columns = [
-        row[1] for row in
-        connection.execute(text("PRAGMA table_info(machines)"))
+        row[1] for row in connection.execute(
+            text("PRAGMA table_info(machines)"))
     ]
     if "floor" not in existing_columns:
-        connection.execute(
-            text("ALTER TABLE machines ADD COLUMN floor INTEGER"))
+        connection.execute(text(
+            "ALTER TABLE machines ADD COLUMN floor INTEGER"))
     if "building" not in existing_columns:
-        connection.execute(
-            text("ALTER TABLE machines ADD COLUMN building TEXT"))
+        connection.execute(text(
+            "ALTER TABLE machines ADD COLUMN building TEXT"))
 
 
 def _ensure_existing_machine_metadata(connection) -> None:
@@ -45,7 +45,7 @@ def _ensure_existing_machine_metadata(connection) -> None:
             floor, building = mapping[row["id"]]
             connection.execute(
                 text(
-                    "UPDATE machines SET floor = :floor,"
+                    "UPDATE machines SET floor = :floor, "
                     "building = :building WHERE id = :id"
                 ),
                 {"floor": floor, "building": building, "id": row["id"]},
@@ -66,8 +66,8 @@ def init_db() -> None:
                     building TEXT
                     )
                     """
-                    )
-                    )
+            )
+        )
 
         connection.execute(
             text(
@@ -83,8 +83,8 @@ def init_db() -> None:
                     FOREIGN KEY(machine_id) REFERENCES machines(id)
                     )
                     """
-                    )
-                    )
+            )
+        )
 
         connection.execute(
             text(
@@ -98,8 +98,8 @@ def init_db() -> None:
                     FOREIGN KEY(machine_id) REFERENCES machines(id)
                     )
                     """
-                    )
-                    )
+            )
+        )
 
         _ensure_machine_metadata_columns(connection)
         _ensure_existing_machine_metadata(connection)
@@ -114,23 +114,41 @@ def seed_machines_if_empty() -> None:
         if machines_count > 0:
             return
 
-        seed_data = [
-            {"id": 1, "name": "Washer 1",
-             "type": "wash", "floor": 1, "building": "1"},
-            {"id": 2, "name": "Washer 2",
-             "type": "wash", "floor": 2, "building": "1"},
-            {"id": 3, "name": "Dryer 1",
-             "type": "dry", "floor": 1, "building": "1"},
-            {"id": 4, "name": "Dryer 2",
-             "type": "dry", "floor": 2, "building": "1"},
-        ]
-        connection.execute(
-            text(
-                "INSERT INTO machines (id, name, type, floor, building)"
-                "VALUES (:id, :name, :type, :floor, :building)"
-            ),
-            seed_data,
-        )
+        # 7 buildings total:
+        # - buildings 1-5 have 4 floors
+        # - buildings 6-7 have 13 floors
+        # on every floor there are 2 washers + 2 dryers (4 machines per floor)
+        seed_data: list[dict[str, Any]] = []
+        next_id = 1
+
+        for building in range(1, 8):
+            max_floor = 4 if building <= 5 else 13
+            for floor in range(1, max_floor + 1):
+                machines = [
+                    ("Washer 1", "wash"),
+                    ("Washer 2", "wash"),
+                    ("Dryer 1", "dry"),
+                    ("Dryer 2", "dry"),
+                ]
+                for name, mtype in machines:
+                    seed_data.append(
+                        {
+                            "id": next_id,
+                            "name": f"B{building} F{floor} {name}",
+                            "type": mtype,
+                            "floor": floor,
+                            "building": str(building),
+                        }
+                    )
+                next_id += 1
+                connection.execute(
+                    text(
+                        "INSERT INTO machines ( "
+                        "id, name, type, floor, building) "
+                        "VALUES (:id, :name, :type, :floor, :building)"
+                    ),
+                    seed_data,
+                )
 
 
 def fetch_machines() -> list[dict[str, Any]]:
@@ -159,7 +177,7 @@ def fetch_machines() -> list[dict[str, Any]]:
                 )
         ORDER BY m.id
         """
-        )
+    )
     with engine.connect() as connection:
         result = connection.execute(query)
         return [dict(row._mapping) for row in result]

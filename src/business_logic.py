@@ -1,7 +1,8 @@
 """
 functions that turn the last report + current time into
 what users should see (status text for the laundry board).
-call infer_inferred_status from db.get_status when building GET /machines.
+call infer_inferred_status from
+db.get_status when building GET /machines.
 """
 
 from __future__ import annotations
@@ -22,8 +23,9 @@ INFERRED_BUSY = "busy"
 INFERRED_PROBABLY_FREE = "probably_free"
 INFERRED_UNAVAILABLE = "unavailable"
 
-# when "busy" without deadline, use default
-DEFAULT_BUSY_ASSUMPTION = timedelta(hours=2)
+# when "busy" without deadline,
+# use default (project requirement: 4 hours)
+DEFAULT_BUSY_ASSUMPTION = timedelta(hours=4)
 
 
 def _naive(dt: datetime) -> datetime:
