@@ -1,5 +1,6 @@
 """
-functions that turn the last report + current time into what users should see (status text for the laundry board).
+functions that turn the last report + current time into
+what users should see (status text for the laundry board).
 call infer_inferred_status from db.get_status when building GET /machines.
 """
 
@@ -14,7 +15,8 @@ STATUS_BUSY = "busy"
 STATUS_UNAVAILABLE = "unavailable"
 
 # values returned by GET /machines
-# strings in GET /machines inferred_status - use in api models / streamlit colours
+# strings in GET /machines inferred_status
+#  - use in api models / streamlit colours
 INFERRED_FREE = "free"
 INFERRED_BUSY = "busy"
 INFERRED_PROBABLY_FREE = "probably_free"
@@ -37,7 +39,8 @@ def infer_inferred_status(
     now: datetime,
 ) -> str:
     """
-    latest_status / report_time / time_remaining come from the newest report row.
+    latest_status / report_time /
+    time_remaining come from the newest report row.
     if there is no report yet, we treat the machine as free.
     """
     now_n = _naive(now)

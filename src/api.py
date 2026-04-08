@@ -47,11 +47,14 @@ class HistoryReportOut(BaseModel):
 
 @app.post("/report", status_code=201)
 def post_report(body: ReportIn) -> dict[str, str]:
-    # front sends a new observation; we only store it; inference happens on read
+    # front sends a new observation;
+    # we only store it;
+    # inference happens on read
     try:
         save_report(body.machine_id, body.status, body.time_remaining)
     except ValueError:
-        raise HTTPException(status_code=404, detail="machine not found") from None
+        raise HTTPException(status_code=404,
+                            detail="machine not found") from None
     return {"result": "ok"}
 
 
@@ -61,12 +64,15 @@ def list_machines() -> list[dict]:
     return get_status()
 
 
-@app.get("/machines/{machine_id}/history", response_model=list[HistoryReportOut])
+@app.get("/machines/{machine_id}/history",
+         response_model=list[HistoryReportOut])
 def machine_history(machine_id: int, limit: int = 20) -> list[dict]:
     # last N raw rows
     if limit < 1 or limit > 200:
-        raise HTTPException(status_code=400, detail="limit must be between 1 and 200")
+        raise HTTPException(
+            status_code=400, detail="limit must be between 1 and 200")
     try:
         return get_machine_history(machine_id, limit=limit)
     except ValueError:
-        raise HTTPException(status_code=404, detail="machine not found") from None
+        raise HTTPException(
+            status_code=404, detail="machine not found") from None

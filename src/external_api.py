@@ -1,7 +1,8 @@
 """
 yandex maps helpers for the laundry app.
 
-we take a plain-text address, ask yandex's http geocoder for coordinates, then build a
+we take a plain-text address, ask yandex's
+http geocoder for coordinates, then build a
 small map-widget link the frontend can drop into an iframe.
 """
 
@@ -24,13 +25,13 @@ YANDEX_GEOCODE_URL = "https://geocode-maps.yandex.ru/1.x/"
 def _api_key_from_env() -> str:
     key = os.environ.get(YANDEX_MAPS_API_KEY_ENV, "").strip()
     if not key:
-        raise ValueError(
-            f"missing {YANDEX_MAPS_API_KEY_ENV} in the env"
-        )
+        raise ValueError(f"missing {YANDEX_MAPS_API_KEY_ENV} in the env")
     return key
 
 
-def geocode_address(address: str, *, timeout_seconds: float = 10.0) -> tuple[float, float]:
+def geocode_address(
+    address: str, *, timeout_seconds: float = 10.0
+) -> tuple[float, float]:
     """
     calls yandex geocoder; returns (longitude, latitude) for the first result.
     """
@@ -40,7 +41,8 @@ def geocode_address(address: str, *, timeout_seconds: float = 10.0) -> tuple[flo
         "format": "json",
         "results": 1,
     }
-    response = requests.get(YANDEX_GEOCODE_URL, params=params, timeout=timeout_seconds)
+    response = requests.get(YANDEX_GEOCODE_URL,
+                            params=params, timeout=timeout_seconds)
     response.raise_for_status()
     data: dict[str, Any] = response.json()
     return _parse_first_point(data)
@@ -48,9 +50,7 @@ def geocode_address(address: str, *, timeout_seconds: float = 10.0) -> tuple[flo
 
 def _parse_first_point(data: dict[str, Any]) -> tuple[float, float]:
     try:
-        members = (
-            data["response"]["GeoObjectCollection"]["featureMember"]
-        )
+        members = data["response"]["GeoObjectCollection"]["featureMember"]
     except (KeyError, TypeError) as exc:
         raise ValueError("unexpected geocoder response shape") from exc
 
@@ -70,7 +70,8 @@ def map_widget_url(
     lang: str = "ru_RU",
 ) -> str:
     """
-    link suitable for an <iframe src="..."> yandex map widget centered on lon/lat.
+    link suitable for an <iframe src="...">
+    yandex map widget centered on lon/lat.
     pt adds a red marker at the same point (pm2rdm).
     """
     query = urlencode(
@@ -91,7 +92,8 @@ def map_widget_iframe_html(
     height: int = 400,
     zoom: int = 16,
 ) -> str:
-    """geocode the address, then return iframe html for streamlit components.html(...)."""
+    """geocode the address, then return iframe html
+    for streamlit components.html(...)."""
     lon, lat = geocode_address(address)
     src = map_widget_url(lon, lat, zoom=zoom)
     return (
