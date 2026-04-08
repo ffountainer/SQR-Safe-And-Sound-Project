@@ -237,6 +237,36 @@ def filter_and_sort_machines(
     )
 
 
+def button_send_report(machine_id, status, time_remaining, reporter_name):
+    if st.button("Отправить отчет"):
+        payload = {
+            "machine_id": int(machine_id),
+            "status": status,
+            "time_remaining": time_remaining if status == "busy" else None,
+            "reporter_name": reporter_name.strip() or None,
+        }
+        result = submit_report(DEFAULT_API_BASE_URL, payload)
+        if result is not None:
+            st.success("Отчет отправлен успешно")
+            st.json(result)
+            st.session_state.selected_report_machine = None
+            st.rerun()
+
+
+def _is_valid_time_remaining(status):
+    if status == "busy":
+        time_remaining = st.number_input(
+            "Время до конца (мин)",
+            min_value=0,
+            value=10,
+            step=5,
+        )
+        return time_remaining
+    else:
+        st.info("Время до конца используется только для статуса 'В процессе'.")
+        return None
+
+
 def render_report_panel(
     DEFAULT_API_BASE_URL: str, selected_machine_id: Optional[str]
 ) -> None:
@@ -285,31 +315,10 @@ def render_report_panel(
     )
 
     time_remaining = None
-    if status == "busy":
-        time_remaining = st.number_input(
-            "Время до конца (мин)",
-            min_value=0,
-            value=10,
-            step=5,
-        )
-    else:
-        st.info("Время до конца используется только для статуса 'В процессе'.")
+    time_remaining = _is_valid_time_remaining(status)
 
     reporter_name = st.text_input("Ваше имя (необязательно)", value="")
-
-    if st.button("Отправить отчет"):
-        payload = {
-            "machine_id": int(machine_id),
-            "status": status,
-            "time_remaining": time_remaining if status == "busy" else None,
-            "reporter_name": reporter_name.strip() or None,
-        }
-        result = submit_report(DEFAULT_API_BASE_URL, payload)
-        if result is not None:
-            st.success("Отчет отправлен успешно")
-            st.json(result)
-            st.session_state.selected_report_machine = None
-            st.rerun()
+    button_send_report(machine_id, status, time_remaining, reporter_name)
 
 
 def process_column(col, machine, mid, machine_building,
