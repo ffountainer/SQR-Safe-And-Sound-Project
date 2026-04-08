@@ -1,0 +1,4 @@
+# file: /Users/fountainer/uni/SQR/project/src/business_logic.py
+# hypothesis_version: 6.151.9
+
+['busy', 'free', 'probably_free', 'unavailable']

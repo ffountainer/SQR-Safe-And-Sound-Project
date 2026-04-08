@@ -40,26 +40,44 @@ def _to_utc_datetime(value: Any) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
+def check_status(latest_status, report_timestamp):
+    if latest_status is None:
+        # No report yet: show as free to keep API response model stable.
+        return "free", None
+    if latest_status == "unavailable":
+        return "unavailable", None
+    if latest_status == "free":
+        return "free", None
+    if latest_status != "busy" or report_timestamp is None:
+        # Unknown labels or malformed rows fail safe to free.
+        return "free", None
+    else:
+        return None
+
+
 def _infer_status(
     latest_status: str | None,
     report_timestamp: datetime | None,
     time_remaining: int | None,
 ) -> tuple[str, datetime | None]:
     """Infer displayed machine status from latest report and current time."""
-    if latest_status is None:
-        # No report yet: show as free to keep API response model stable.
-        return "free", None
+    check = check_status(latest_status, report_timestamp)
+    if (check is not None):
+        return check
+    # if latest_status is None:
+    #     # No report yet: show as free to keep API response model stable.
+    #     return "free", None
 
     now = datetime.now(timezone.utc)
-    if latest_status == "unavailable":
-        return "unavailable", None
+    # if latest_status == "unavailable":
+    #     return "unavailable", None
 
-    if latest_status == "free":
-        return "free", None
+    # if latest_status == "free":
+    #     return "free", None
 
-    if latest_status != "busy" or report_timestamp is None:
-        # Unknown labels or malformed rows fail safe to free.
-        return "free", None
+    # if latest_status != "busy" or report_timestamp is None:
+    #     # Unknown labels or malformed rows fail safe to free.
+    #     return "free", None
 
     if time_remaining is not None:
         available_at = report_timestamp + timedelta(minutes=time_remaining)
@@ -142,6 +160,36 @@ def get_machine_history(
     return history
 
 
+def isinstance_machine(machine_id):
+    if not isinstance(machine_id, int) or machine_id <= 0:
+        raise ValueError("machine_id must be a positive integer")
+
+
+def is_valid_status(incoming_status):
+    if incoming_status not in VALID_STATUSES:
+        raise ValueError("status must be one of: free, busy, unavailable")
+
+
+def does_time_remain(incoming_time_remaining):
+    if incoming_time_remaining is not None:
+        if not isinstance(
+                incoming_time_remaining, int) or incoming_time_remaining < 0:
+            raise ValueError(
+                "time_remaining must be a non-negative integer or null")
+
+
+def is_reporter_name_valid(incoming_reporter_name):
+    if incoming_reporter_name is not None and not isinstance(
+        incoming_reporter_name, str
+    ):
+        raise ValueError("reporter_name must be a string or null")
+
+
+def does_machine_exist(machine_id):
+    if not machine_exists(machine_id):
+        raise ValueError("machine_id does not exist")
+
+
 def save_report(
     report_or_machine_id: dict[str, Any] | int,
     status: str | None = None,
@@ -168,21 +216,11 @@ def save_report(
         incoming_time_remaining = time_remaining
         incoming_reporter_name = reporter_name
 
-    if not isinstance(machine_id, int) or machine_id <= 0:
-        raise ValueError("machine_id must be a positive integer")
-    if incoming_status not in VALID_STATUSES:
-        raise ValueError("status must be one of: free, busy, unavailable")
-    if incoming_time_remaining is not None:
-        if not isinstance(
-                incoming_time_remaining, int) or incoming_time_remaining < 0:
-            raise ValueError(
-                "time_remaining must be a non-negative integer or null")
-    if incoming_reporter_name is not None and not isinstance(
-        incoming_reporter_name, str
-    ):
-        raise ValueError("reporter_name must be a string or null")
-    if not machine_exists(machine_id):
-        raise ValueError("machine_id does not exist")
+    isinstance_machine(machine_id)
+    is_valid_status(incoming_status)
+    does_time_remain(incoming_time_remaining)
+    is_reporter_name_valid(incoming_reporter_name)
+    does_machine_exist(machine_id)
 
     inserted = insert_report(
         machine_id=machine_id,
@@ -202,6 +240,26 @@ def save_report(
     }
 
 
+def check_machine(machine_id):
+    if not isinstance(machine_id, int) or machine_id <= 0:
+        raise ValueError("machine_id must be a positive integer")
+
+
+def check_message(message):
+    if not isinstance(message, str) or not message.strip():
+        raise ValueError("message must be a non-empty string")
+
+
+def check_level(level):
+    if level not in VALID_NOTIFICATION_LEVELS:
+        raise ValueError("level must be one of: info, warning, error")
+
+
+def check_machine_exists(machine_id):
+    if not machine_exists(machine_id):
+        raise ValueError("machine_id does not exist")
+
+
 def create_notification(notification: dict[str, Any]) -> dict[str, Any]:
     """Validate and persist one notification row."""
     _ensure_db_ready()
@@ -210,14 +268,10 @@ def create_notification(notification: dict[str, Any]) -> dict[str, Any]:
     message = notification.get("message")
     level = notification.get("level", "info")
 
-    if not isinstance(machine_id, int) or machine_id <= 0:
-        raise ValueError("machine_id must be a positive integer")
-    if not isinstance(message, str) or not message.strip():
-        raise ValueError("message must be a non-empty string")
-    if level not in VALID_NOTIFICATION_LEVELS:
-        raise ValueError("level must be one of: info, warning, error")
-    if not machine_exists(machine_id):
-        raise ValueError("machine_id does not exist")
+    check_machine(machine_id)
+    check_message(message)
+    check_level(level)
+    check_machine_exists(machine_id)
 
     inserted = insert_notification(
         machine_id=machine_id,

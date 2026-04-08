@@ -34,6 +34,23 @@ def _naive(dt: datetime) -> datetime:
     return dt.replace(tzinfo=None)
 
 
+def check_status(latest_status):
+    if latest_status is None:
+        return INFERRED_FREE
+
+    if latest_status == STATUS_UNAVAILABLE:
+        return INFERRED_UNAVAILABLE
+
+    if latest_status == STATUS_FREE:
+        return INFERRED_FREE
+
+    if latest_status != STATUS_BUSY:
+        # unknown label in db - fail safe
+        return INFERRED_FREE
+    else:
+        return None
+
+
 def infer_inferred_status(
     latest_status: str | None,
     report_time: datetime | None,
@@ -47,18 +64,10 @@ def infer_inferred_status(
     """
     now_n = _naive(now)
 
-    if latest_status is None:
-        return INFERRED_FREE
+    check = check_status(latest_status)
 
-    if latest_status == STATUS_UNAVAILABLE:
-        return INFERRED_UNAVAILABLE
-
-    if latest_status == STATUS_FREE:
-        return INFERRED_FREE
-
-    if latest_status != STATUS_BUSY:
-        # unknown label in db - fail safe
-        return INFERRED_FREE
+    if check is not None:
+        return check
 
     if report_time is None:
         return INFERRED_FREE
