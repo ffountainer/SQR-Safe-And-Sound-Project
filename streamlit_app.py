@@ -450,7 +450,7 @@ def render_history_panel(DEFAULT_API_BASE_URL: str, machine_id: int) -> None:
         st.info("История пуста или машина не найдена.")
         return
     st.json(history)
-    st.dataframe(history, use_container_width=True)
+    st.dataframe(history, width='stretch')
 
 
 def render_yandex_map(address: str, width: int,
@@ -471,7 +471,7 @@ def render_yandex_map(address: str, width: int,
         st.error(f"Ошибка создания карты: {error}")
 
 
-def main() -> None:
+def initial_setup():
     st.set_page_config(page_title="SQRS Project", layout="wide")
     st.title("Laundry Monitor")
     st.markdown(
@@ -498,8 +498,8 @@ button[kind="tertiary"] {
         unsafe_allow_html=True,
     )
 
-    # persist last opened sidebar values
-    # in the url (survives a full page refresh)
+
+def set_default_values():
     qp = st.query_params
     if "view" not in st.session_state:
         # first visit should always land on "home"
@@ -514,6 +514,51 @@ button[kind="tertiary"] {
     if "map_address" not in st.session_state:
         st.session_state.map_address = qp.get(
             "map_address", "Иннополис, Россия")
+
+
+def what_click(home_clicked, select_clicked, _sync_query_params):
+    if home_clicked:
+        st.session_state.view = "home"
+        _sync_query_params()
+        st.rerun()
+    if select_clicked:
+        st.session_state.view = "select"
+        _sync_query_params()
+        st.rerun()
+
+
+def state_select(_sync_query_params):
+    building_number = None
+    floor_number = None
+    map_address = None
+    if st.session_state.view == "select":
+        st.divider()
+        st.header("Настройки")
+        building_number = st.text_input(
+            "Номер корпуса",
+            key="building",
+            on_change=_sync_query_params,
+        )
+        floor_number = st.number_input(
+            "Этаж",
+            min_value=1,
+            max_value=13,
+            key="floor",
+            on_change=_sync_query_params,
+        )
+        map_address = st.text_input(
+            "Адрес",
+            key="map_address",
+            on_change=_sync_query_params,
+        )
+        if st.button("Обновить"):
+            st.rerun()
+    return [building_number, floor_number, map_address]
+
+
+def main() -> None:
+    initial_setup()
+    set_default_values()
 
     def _sync_query_params() -> None:
         st.query_params.update(
@@ -548,46 +593,12 @@ div[data-testid="stSidebar"] button.nav-active {
             "Выбрать машину", type="secondary", width='stretch'
         )
 
-        if home_clicked:
-            st.session_state.view = "home"
-            _sync_query_params()
-            st.rerun()
-        if select_clicked:
-            st.session_state.view = "select"
-            _sync_query_params()
-            st.rerun()
+        what_click(home_clicked, select_clicked, _sync_query_params)
+        values = state_select(_sync_query_params)
 
-        # active_label = (
-        #     "Главная" if st.session_state.view == "home"
-        #     else "Выбрать машину"
-        # )
-
-        building_number = None
-        floor_number = None
-        map_address = None
-
-        if st.session_state.view == "select":
-            st.divider()
-            st.header("Настройки")
-            building_number = st.text_input(
-                "Номер корпуса",
-                key="building",
-                on_change=_sync_query_params,
-            )
-            floor_number = st.number_input(
-                "Этаж",
-                min_value=1,
-                max_value=13,
-                key="floor",
-                on_change=_sync_query_params,
-            )
-            map_address = st.text_input(
-                "Адрес",
-                key="map_address",
-                on_change=_sync_query_params,
-            )
-            if st.button("Обновить"):
-                st.rerun()
+    building_number = values[0]
+    floor_number = values[1]
+    map_address = values[2]
 
     if st.session_state.view == "home":
         render_machine_list(
