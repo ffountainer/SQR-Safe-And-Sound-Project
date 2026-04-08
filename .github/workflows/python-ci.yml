@@ -35,15 +35,15 @@ jobs:
         run: poetry check
 
       - name: Cyclomatic Complexity
-        run: poetry run radon cc src/ -a -s
+        run: poetry run radon cc src/ streamlit_app.py -a -s
       
       - name: Maintainability Index
         if: '!cancelled()'
-        run: poetry run radon mi src/ -s
+        run: poetry run radon mi src/ streamlit_app.py -s
       
       - name: Style (PEP8)
         if: '!cancelled()'
-        run: poetry run flake8 src/ tests/
+        run: poetry run flake8 src/ tests/ streamlit_app.py
       
       - name: Unit Tests Pass Rate
         if: '!cancelled()'
@@ -55,7 +55,7 @@ jobs:
       
       - name: Security Scan
         if: '!cancelled()'
-        run: poetry run bandit -r src/ -ll
+        run: poetry run bandit -r src/ streamlit_app.py -ll
       
       - name: Performance Smoke Test
         if: '!cancelled()'

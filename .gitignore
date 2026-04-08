@@ -7,3 +7,4 @@ mdocs/
 *.pdf
 *.db
 *.pyc
+.vscode

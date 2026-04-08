@@ -1,7 +1,8 @@
 """
 property-based tests (Hypothesis) for laundry status inference.
 
-goal: fuzz inputs and assert invariants / spec rules so anomalies surface as failing examples.
+goal: fuzz inputs and assert invariants /
+spec rules so anomalies surface as failing examples.
 """
 
 from __future__ import annotations
@@ -21,7 +22,8 @@ from src.business_logic import (
 )
 
 # every value the api can return for inferred_status
-_INFERRED = {INFERRED_FREE, INFERRED_BUSY, INFERRED_PROBABLY_FREE, INFERRED_UNAVAILABLE}
+_INFERRED = {INFERRED_FREE, INFERRED_BUSY,
+             INFERRED_PROBABLY_FREE, INFERRED_UNAVAILABLE}
 
 # bounded naive datetimes; we normalize to UTC
 _dt = st.datetimes(
@@ -49,7 +51,8 @@ def test_no_report_always_free(now: datetime) -> None:
 
 @_hyp
 @given(_dt, _dt, st.one_of(st.none(), _minutes))
-def test_unavailable_is_stable(report_time: datetime, now: datetime, minutes: int | None) -> None:
+def test_unavailable_is_stable(
+        report_time: datetime, now: datetime, minutes: int | None) -> None:
     rt = _utc(report_time)
     n = _utc(now)
     out = infer_inferred_status("unavailable", rt, minutes, n)
@@ -59,7 +62,8 @@ def test_unavailable_is_stable(report_time: datetime, now: datetime, minutes: in
 
 @_hyp
 @given(_dt, _dt, st.one_of(st.none(), _minutes))
-def test_free_is_stable(report_time: datetime, now: datetime, minutes: int | None) -> None:
+def test_free_is_stable(report_time: datetime,
+                        now: datetime, minutes: int | None) -> None:
     rt = _utc(report_time)
     n = _utc(now)
     out = infer_inferred_status("free", rt, minutes, n)
@@ -68,14 +72,16 @@ def test_free_is_stable(report_time: datetime, now: datetime, minutes: int | Non
 
 @_hyp
 @given(_dt, _minutes)
-def test_busy_with_timer_before_end_busy_after_free(report_time: datetime, minutes: int) -> None:
+def test_busy_with_timer_before_end_busy_after_free(
+        report_time: datetime, minutes: int) -> None:
     assume(minutes > 0)
     rt = _utc(report_time)
     ends = rt + timedelta(minutes=minutes)
     before_n = rt + timedelta(minutes=minutes - 1)
     assume(before_n < ends)
 
-    assert infer_inferred_status("busy", rt, minutes, before_n) == INFERRED_BUSY
+    assert infer_inferred_status(
+        "busy", rt, minutes, before_n) == INFERRED_BUSY
     after_n = ends + timedelta(seconds=1)
     assert infer_inferred_status("busy", rt, minutes, after_n) == INFERRED_FREE
 
@@ -88,7 +94,8 @@ def test_busy_without_timer_four_hour_window(report_time: datetime) -> None:
     inside = rt + (cut - rt) / 2
     outside = cut + timedelta(seconds=1)
     assert infer_inferred_status("busy", rt, None, inside) == INFERRED_BUSY
-    assert infer_inferred_status("busy", rt, None, outside) == INFERRED_PROBABLY_FREE
+    assert infer_inferred_status(
+        "busy", rt, None, outside) == INFERRED_PROBABLY_FREE
 
 
 @_hyp
@@ -102,7 +109,8 @@ def test_unknown_status_string_fails_safe_to_free(label: str) -> None:
 
 @_hyp
 @given(_dt, _dt, st.one_of(st.none(), _minutes))
-def test_output_is_always_valid_enum(report_time: datetime, now: datetime, minutes: int | None) -> None:
+def test_output_is_always_valid_enum(
+        report_time: datetime, now: datetime, minutes: int | None) -> None:
     rt = _utc(report_time)
     n = _utc(now)
     for status in ("free", "busy", "unavailable", None):

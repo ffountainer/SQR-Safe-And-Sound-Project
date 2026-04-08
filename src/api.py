@@ -29,7 +29,8 @@ class ReportIn(BaseModel):
         ge=0,
         description="minutes left when status is busy",
     )
-    reporter_name: str | None = Field(default=None, description="optional reporter name")
+    reporter_name: str | None = Field(
+        default=None, description="optional reporter name")
 
 
 class MachineOut(BaseModel):
@@ -105,11 +106,13 @@ def list_machines() -> list[dict]:
     return get_status()
 
 
-@app.get("/machines/{machine_id}/history", response_model=list[HistoryReportOut])
+@app.get("/machines/{machine_id}/history",
+         response_model=list[HistoryReportOut])
 def machine_history(machine_id: int, limit: int = 20) -> list[dict]:
     # last N raw rows
     if limit < 1 or limit > 200:
-        raise HTTPException(status_code=400, detail="limit must be between 1 and 200")
+        raise HTTPException(
+            status_code=400, detail="limit must be between 1 and 200")
     try:
         return get_machine_history(machine_id, limit=limit)
     except ValueError as error:
