@@ -389,6 +389,23 @@ def display_machines(rows, cards_per_row):
                            status_label, time_remaining)
 
 
+def filtered(show_all, machines, floor, building):
+    if show_all:
+        st.subheader("Все машины")
+        filtered_machines = sorted(machines, key=status_sort_key)
+    else:
+        st.subheader(f"Корпус {building or '—'} • этаж {floor}")
+        filtered_machines = filter_and_sort_machines(machines, building, floor)
+    return filtered_machines
+
+
+def machine_history():
+    if "selected_report_machine" not in st.session_state:
+        st.session_state.selected_report_machine = None
+    if "history_machine_id" not in st.session_state:
+        st.session_state.history_machine_id = None
+
+
 def render_machine_list(
     DEFAULT_API_BASE_URL: str,
     building: Optional[str],
@@ -403,12 +420,8 @@ def render_machine_list(
                 "Проверьте URL бэкенда и доступность сервиса.")
         return None
 
-    if show_all:
-        st.subheader("Все машины")
-        filtered_machines = sorted(machines, key=status_sort_key)
-    else:
-        st.subheader(f"Корпус {building or '—'} • этаж {floor}")
-        filtered_machines = filter_and_sort_machines(machines, building, floor)
+    filtered_machines = filtered(show_all,
+                                 machines, floor, building)
     if not filtered_machines:
         st.write("Нет машин.")
         return None
@@ -420,10 +433,7 @@ def render_machine_list(
 
     display_machines(rows, cards_per_row)
 
-    if "selected_report_machine" not in st.session_state:
-        st.session_state.selected_report_machine = None
-    if "history_machine_id" not in st.session_state:
-        st.session_state.history_machine_id = None
+    machine_history()
 
     if st.session_state.selected_report_machine:
         st.markdown("---")
