@@ -419,6 +419,11 @@ def render_machine_list(
                              st.session_state.history_machine_id)
         st.session_state.history_machine_id = None
 
+    if st.session_state.history_machine_id:
+        render_history_panel(DEFAULT_API_BASE_URL,
+                             st.session_state.history_machine_id)
+        st.session_state.history_machine_id = None
+
     return st.session_state.selected_report_machine
 
 
