@@ -73,10 +73,7 @@ def submit_report(
     )
 
 
-def normalize_status(status_value: Any) -> str:
-    if status_value is None:
-        return "unknown"
-    text = str(status_value).lower()
+def is_anavailable(text):
     if any(
         keyword in text
         for keyword in [
@@ -85,23 +82,56 @@ def normalize_status(status_value: Any) -> str:
             "error",
             "fault",
             "сломана",
-            "неисправ",
+            "неисправна",
         ]
     ):
         return "unavailable"
-    # important: check unavailable first,
-    # because "unavailable" contains "available"
+    else:
+        return None
+
+
+def is_busy(text):
     if any(
         keyword in text
         for keyword in ["busy", "process", "running", "занят", "в процессе"]
     ):
         return "busy"
+    else:
+        return None
+
+
+def is_probably_free(text):
     if any(keyword in text for keyword in [
             "probably_free", "скорее свободна"]):
         return "probably_free"
+    else:
+        return None
+
+
+def is_free(text):
     if any(keyword in text for keyword in [
             "free", "available", "свободна", "idle"]):
         return "free"
+    else:
+        return None
+
+
+def normalize_status(status_value: Any) -> str:
+    if status_value is None:
+        return "unknown"
+    text = str(status_value).lower()
+    anavailable = is_anavailable(text)
+    if (anavailable is not None):
+        return anavailable
+    busy = is_busy(text)
+    if (busy is not None):
+        return busy
+    probably_free = is_probably_free(text)
+    if (probably_free is not None):
+        return probably_free
+    free = is_free(text)
+    if (free is not None):
+        return free
     return "unknown"
 
 
