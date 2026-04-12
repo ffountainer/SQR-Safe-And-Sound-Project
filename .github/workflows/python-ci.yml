@@ -61,6 +61,19 @@ jobs:
         if: '!cancelled()'
         run: poetry run bandit -r src/ streamlit_app.py -ll
       
+      - name: Start API
+        run: |
+          poetry run uvicorn src.api:app --host 0.0.0.0 --port 8000 &
+    
+      - name: Wait for API
+        run: |
+          for i in {1..10}; do
+            curl -f http://localhost:8000/docs && break
+            sleep 1
+          done
+
       - name: Performance Smoke Test
-        if: '!cancelled()'
-        run: poetry run locust -f locust/locustfile.py --headless -u 1 -r 1 -t 10s
+        run: |
+          poetry run locust -f locust/locustfile.py \
+            --headless -u 1 -r 1 -t 10s \
+            --host=http://localhost:8000
