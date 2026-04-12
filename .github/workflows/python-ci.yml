@@ -48,13 +48,13 @@ jobs:
       - name: Unit Tests Pass Rate
         if: '!cancelled()'
         run: poetry run pytest --cov=src --cov-report=term-missing
-      
+
       - name: Run mutation tests
         run: |
           poetry run mutmut run \
             --paths-to-mutate src/business_logic.py \
             --runner "pytest tests/mutation/test_mutation_bl.py" \
-            --quiet
+            > mutmut.log 2>&1
 
       - name: Show mutation summary
         run: poetry run mutmut results
