@@ -117,7 +117,8 @@ class TestInferInferredStatusErrors:
         """Test with naive datetime (no timezone)."""
         now_naive = datetime.now()
         report_time_naive = now_naive - timedelta(minutes=5)
-        result = infer_inferred_status(STATUS_BUSY, report_time_naive, 10, now_naive)
+        result = infer_inferred_status(
+            STATUS_BUSY, report_time_naive, 10, now_naive)
         assert result == INFERRED_BUSY
 
     def test_infer_inferred_status_mixed_timezone(self):
@@ -125,7 +126,8 @@ class TestInferInferredStatusErrors:
         now_utc = datetime.now(timezone.utc)
         now_naive = datetime.now()
         report_time_utc = now_utc - timedelta(minutes=5)
-        result = infer_inferred_status(STATUS_BUSY, report_time_utc, 10, now_naive)
+        result = infer_inferred_status(
+            STATUS_BUSY, report_time_utc, 10, now_naive)
         # Should handle the conversion
         assert isinstance(result, str)
 
