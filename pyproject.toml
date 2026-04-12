@@ -5,7 +5,7 @@ description = ""
 authors = [
     {name = "veronika_levasheva",email = "v.levasheva@innopolis.university"}
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "streamlit (>=1.55.0,<2.0.0)",
     "sqlalchemy (>=2.0.48,<3.0.0)",
@@ -20,7 +20,8 @@ dependencies = [
     "requests (>=2.33.0,<3.0.0)",
     "hypothesis (>=6.151.9,<7.0.0)",
     "python-dotenv (>=1.2.2,<2.0.0)",
-    "uvicorn (>=0.44.0,<0.45.0)"
+    "uvicorn (>=0.44.0,<0.45.0)",
+    "mutmut (==2.4.4)",
 ]
 
 
