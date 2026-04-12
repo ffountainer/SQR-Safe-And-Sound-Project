@@ -8,3 +8,5 @@ mdocs/
 *.db
 *.pyc
 .vscode
+mutants/
+.mutmut-cache

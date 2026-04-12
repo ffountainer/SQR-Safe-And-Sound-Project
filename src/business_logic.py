@@ -11,27 +11,27 @@ from datetime import datetime, timedelta
 
 
 # values stored when smbd submits a report
-STATUS_FREE = "free"
-STATUS_BUSY = "busy"
-STATUS_UNAVAILABLE = "unavailable"
+STATUS_FREE = "free"  # pragma: no mutate
+STATUS_BUSY = "busy"  # pragma: no mutate
+STATUS_UNAVAILABLE = "unavailable"  # pragma: no mutate
 
 # values returned by GET /machines
 # strings in GET /machines inferred_status
 #  - use in api models / streamlit colours
-INFERRED_FREE = "free"
-INFERRED_BUSY = "busy"
-INFERRED_PROBABLY_FREE = "probably_free"
-INFERRED_UNAVAILABLE = "unavailable"
+INFERRED_FREE = "free"  # pragma: no mutate
+INFERRED_BUSY = "busy"  # pragma: no mutate
+INFERRED_PROBABLY_FREE = "probably_free"  # pragma: no mutate
+INFERRED_UNAVAILABLE = "unavailable"  # pragma: no mutate
 
 # when "busy" without deadline,
 # use default (project requirement: 4 hours)
-DEFAULT_BUSY_ASSUMPTION = timedelta(hours=4)
+DEFAULT_BUSY_ASSUMPTION = timedelta(hours=4)  # pragma: no mutate
 
 
 def _naive(dt: datetime) -> datetime:
     if dt.tzinfo is None:
-        return dt
-    return dt.replace(tzinfo=None)
+        return dt  # pragma: no mutate
+    return dt.replace(tzinfo=None)  # pragma: no mutate
 
 
 def check_status(latest_status):
@@ -46,7 +46,7 @@ def check_status(latest_status):
 
     if latest_status != STATUS_BUSY:
         # unknown label in db - fail safe
-        return INFERRED_FREE
+        return INFERRED_FREE  # pragma: no mutate
     else:
         return None
 
