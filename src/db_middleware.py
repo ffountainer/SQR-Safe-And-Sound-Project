@@ -140,15 +140,16 @@ def seed_machines_if_empty() -> None:
                             "building": str(building),
                         }
                     )
-                next_id += 1
-                connection.execute(
-                    text(
-                        "INSERT INTO machines ( "
-                        "id, name, type, floor, building) "
-                        "VALUES (:id, :name, :type, :floor, :building)"
-                    ),
-                    seed_data,
-                )
+                    next_id += 1
+
+        connection.execute(
+            text(
+                "INSERT INTO machines ( "
+                "id, name, type, floor, building) "
+                "VALUES (:id, :name, :type, :floor, :building)"
+            ),
+            seed_data,
+        )
 
 
 def fetch_machines() -> list[dict[str, Any]]:

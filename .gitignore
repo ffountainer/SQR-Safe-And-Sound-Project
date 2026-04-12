@@ -2,6 +2,9 @@
 
 mdocs/
 .venv/
+.hypothesis/
+.pytest_cache/
+__pycache__/
 
 *.lock
 *.pdf
