@@ -63,4 +63,4 @@ jobs:
       
       - name: Performance Smoke Test
         if: '!cancelled()'
-        run: poetry run locust -f tests/load/locustfile.py --headless -u 1 -r 1 -t 10s
+        run: poetry run locust -f locust/locustfile.py --headless -u 1 -r 1 -t 10s
