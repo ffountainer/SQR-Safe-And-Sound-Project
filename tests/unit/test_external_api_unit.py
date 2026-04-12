@@ -49,9 +49,13 @@ def test_map_widget_url_contains_coordinates() -> None:
 def test_map_widget_iframe_html_uses_geocode_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(external_api, "geocode_address", lambda _: (50.0, 60.0))
+    monkeypatch.setattr(
+        external_api, "geocode_address", lambda _: (50.0, 60.0)
+    )
 
-    html = external_api.map_widget_iframe_html("Innopolis", width=400, height=200, zoom=12)
+    html = external_api.map_widget_iframe_html(
+        "Innopolis", width=400, height=200, zoom=12
+    )
 
     assert "<iframe" in html
     assert "width=\"400\"" in html

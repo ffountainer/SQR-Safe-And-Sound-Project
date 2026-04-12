@@ -5,10 +5,14 @@ import pytest
 import src.db as db
 
 
-def test_ensure_db_ready_calls_init_and_seed(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ensure_db_ready_calls_init_and_seed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     calls: list[str] = []
     monkeypatch.setattr(db, "init_db", lambda: calls.append("init"))
-    monkeypatch.setattr(db, "seed_machines_if_empty", lambda: calls.append("seed"))
+    monkeypatch.setattr(
+        db, "seed_machines_if_empty", lambda: calls.append("seed")
+    )
 
     db._ensure_db_ready()
 
@@ -34,9 +38,15 @@ def test_to_utc_datetime_variants() -> None:
 
 def test_check_status_paths() -> None:
     assert db.check_status(None, None) == ("free", None)
-    assert db.check_status("unavailable", datetime.now(timezone.utc)) == ("unavailable", None)
-    assert db.check_status("free", datetime.now(timezone.utc)) == ("free", None)
-    assert db.check_status("broken", datetime.now(timezone.utc)) == ("free", None)
+    assert db.check_status(
+        "unavailable", datetime.now(timezone.utc)
+    ) == ("unavailable", None)
+    assert db.check_status(
+        "free", datetime.now(timezone.utc)
+    ) == ("free", None)
+    assert db.check_status(
+        "broken", datetime.now(timezone.utc)
+    ) == ("free", None)
     assert db.check_status("busy", None) == ("free", None)
     assert db.check_status("busy", datetime.now(timezone.utc)) is None
 
@@ -46,8 +56,12 @@ def test_infer_status_busy_with_and_without_timer() -> None:
 
     busy, eta_busy = db._infer_status("busy", now - timedelta(minutes=5), 15)
     free, eta_free = db._infer_status("busy", now - timedelta(minutes=30), 10)
-    maybe_busy, eta_maybe_busy = db._infer_status("busy", now - timedelta(hours=1), None)
-    probably_free, eta_probably = db._infer_status("busy", now - timedelta(hours=5), None)
+    maybe_busy, eta_maybe_busy = db._infer_status(
+        "busy", now - timedelta(hours=1), None
+    )
+    probably_free, eta_probably = db._infer_status(
+        "busy", now - timedelta(hours=5), None
+    )
 
     assert busy == "busy"
     assert eta_busy is not None
@@ -59,7 +73,9 @@ def test_infer_status_busy_with_and_without_timer() -> None:
     assert eta_probably is not None
 
 
-def test_get_status_transforms_machine_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_status_transforms_machine_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     now = datetime.now(timezone.utc)
     rows = [
         {
@@ -90,7 +106,9 @@ def test_get_machine_history_success_and_validation(
 ) -> None:
     now = datetime.now(timezone.utc)
     monkeypatch.setattr(db, "_ensure_db_ready", lambda: None)
-    monkeypatch.setattr(db, "machine_exists", lambda machine_id: machine_id == 1)
+    monkeypatch.setattr(
+        db, "machine_exists", lambda machine_id: machine_id == 1
+    )
     monkeypatch.setattr(
         db,
         "fetch_machine_history",
@@ -147,7 +165,9 @@ def test_does_machine_exist_raises(monkeypatch: pytest.MonkeyPatch) -> None:
         db.does_machine_exist(999)
 
 
-def test_save_report_accepts_dict_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_save_report_accepts_dict_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     now = datetime.now(timezone.utc)
     monkeypatch.setattr(db, "_ensure_db_ready", lambda: None)
     monkeypatch.setattr(db, "machine_exists", lambda _: True)
@@ -177,7 +197,9 @@ def test_save_report_accepts_dict_payload(monkeypatch: pytest.MonkeyPatch) -> No
     assert out["status"] == "busy"
 
 
-def test_save_report_accepts_positional_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_save_report_accepts_positional_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     now = datetime.now(timezone.utc)
     monkeypatch.setattr(db, "_ensure_db_ready", lambda: None)
     monkeypatch.setattr(db, "machine_exists", lambda _: True)

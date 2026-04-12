@@ -50,7 +50,10 @@ def test_infer_inferred_status_busy_without_timer() -> None:
     recent_report = now - timedelta(hours=1)
     old_report = now - timedelta(hours=5)
 
-    assert infer_inferred_status("busy", recent_report, None, now) == INFERRED_BUSY
+    assert (
+        infer_inferred_status("busy", recent_report, None, now)
+        == INFERRED_BUSY
+    )
     assert (
         infer_inferred_status("busy", old_report, None, now)
         == INFERRED_PROBABLY_FREE

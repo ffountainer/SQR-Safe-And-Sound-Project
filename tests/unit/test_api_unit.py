@@ -36,7 +36,12 @@ def test_post_report_success(monkeypatch: pytest.MonkeyPatch) -> None:
         },
     )
 
-    body = api.ReportIn(machine_id=1, status="busy", time_remaining=15, reporter_name="amy")
+    body = api.ReportIn(
+        machine_id=1,
+        status="busy",
+        time_remaining=15,
+        reporter_name="amy",
+    )
     out = api.post_report(body)
 
     assert out.id == 1
@@ -90,7 +95,9 @@ def test_machine_history_value_error_mapping(
     monkeypatch.setattr(
         api,
         "get_machine_history",
-        lambda machine_id, limit: (_ for _ in ()).throw(ValueError("not found")),
+        lambda machine_id, limit: (
+            _ for _ in ()
+        ).throw(ValueError("not found")),
     )
 
     with pytest.raises(HTTPException) as exc_info:
