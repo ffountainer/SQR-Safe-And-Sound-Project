@@ -49,6 +49,16 @@ jobs:
         if: '!cancelled()'
         run: poetry run pytest --cov=src --cov-report=term-missing
       
+      - name: Run mutation tests
+        run: |
+          poetry run mutmut run \
+            --paths-to-mutate src/business_logic.py \
+            --runner "pytest tests/mutation/test_mutation_bl.py" \
+            --quiet
+
+      - name: Show mutation summary
+        run: poetry run mutmut results
+      
       - name: Mutation tests for business_logic.py
         if: '!cancelled()'
         run: poetry run mutmut run --paths-to-mutate src/business_logic.py --runner "pytest tests/mutation/test_mutation_bl.py"
