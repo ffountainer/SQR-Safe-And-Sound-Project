@@ -13,7 +13,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       
       - name: Install Poetry
         run: pip install poetry
@@ -47,7 +47,7 @@ jobs:
       
       - name: Unit Tests Pass Rate
         if: '!cancelled()'
-        run: poetry run pytest
+        run: poetry run pytest --cov=src --cov-report=term-missing
       
       - name: Mutation tests for business_logic.py
         if: '!cancelled()'
